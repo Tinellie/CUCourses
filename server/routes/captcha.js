@@ -22,6 +22,8 @@ router.get('/refetch', async (req, res) => {
 
 router.get('/', async (req, res) => {
 
+
+
     if (!req.app.locals.ready) {
         console.warn("Browser not initialized");
         res.writeHead(500, {
@@ -38,18 +40,22 @@ router.get('/', async (req, res) => {
 
     let screenshotBuffer = await req.app.locals.get_captcha();
     // let screenshotBuffer = fs.readFileSync("image/captcha.png");
-    // console.log(screenshotBuffer);
+    console.log(screenshotBuffer);
     let img = await Jimp.read("image/captcha.png")
-    // img.greyscale();
-    // img.contrast(-0.5);
 
-    img = await cap.Binarization(img);
+    img = await cap.Binarization(img, 105);
+    // let f = 2;
+    // img.resize({w: img.width*f, h: img.height*f});
+    // img.blur(1);
+
 
     await img.write("image/captcha2.png");
     let img_buffer = fs.readFileSync("image/captcha2.png");
 
     let captcha =
-        cap.CropRecognize(img, 4, (img) => cap.RecognizeRotated(img, 5, 60));
+        cap.CropRecognize(img, 4,
+            (img, worker) => cap.RecognizeRotated(img, 5, 80, worker, true)
+        );
 
 
     screenshotBuffer = img_buffer;
@@ -104,6 +110,8 @@ async function fetchCaptcha({browser, page}, out) {
         console.error(error)
     }
 }
+
+
 
 
 async function crop(url, out) {
