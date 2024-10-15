@@ -4,26 +4,20 @@ const cap = require("../captcha");
 
 const {Jimp} = require("jimp");
 const fs = require("fs");
+const error = require("../error");
 
 const router = express.Router();
 
 
-let pup_obj = null;
+const path = "image/captcha.png";
+const path2 = "image/captcha.png";
 
 
-router.get('/refetch', async (req, res) => {
-    req.app.locals.captcha_img = undefined;
-    res.writeHead(200, {
-        'Content-Type': 'text/html',
-    });
-    res.end(null);
-
-})
 
 router.get('/', async (req, res) => {
 
 
-
+    // browser not ready
     if (!req.app.locals.ready) {
         console.warn("Browser not initialized");
         res.writeHead(500, {
@@ -33,85 +27,121 @@ router.get('/', async (req, res) => {
         return;
     }
 
-    console.log();
-    console.log();
-    console.log(colors("green", "======== FETCH  CAPTCHA ========"));
+
+    console.log(colors("green", "\n\n======== FETCH  CAPTCHA ========"));
+
+    let buffer = req.app.locals.captcha_img ?? await fetchCaptcha(req.app.locals.pup_obj, req.app.locals, path);
+
+    // console.log(colors("yellow", "Buffer: ") + buffer);
+    // let buffer = fs.readFileSync("image/captcha.png");
+
+    if (!buffer) {
+        error( "failed to fetch captcha");
+        return;
+    }
+    else console.log("successfully fetched captcha !");
+
+    // respond with the image
+    res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': buffer.length
+    });
+    res.end(buffer);
+
+    console.log(colors("green", "================================\n\n"));
 
 
-    let screenshotBuffer = await req.app.locals.get_captcha();
-    // let screenshotBuffer = fs.readFileSync("image/captcha.png");
-    console.log(screenshotBuffer);
-    let img = await Jimp.read("image/captcha.png")
+    if (!req.app.locals.captcha_img) {
+        req.app.locals.captcha_img = buffer;
+        req.app.locals.captcha_img_ready = true;
+    }
+});
 
+
+
+router.get('/clear', async (req, res) => {
+    if (!req.app.locals.captcha_img_ready) {
+        res.writeHead(403, {
+            'Content-Type': 'text/html',
+        });
+        res.end("Can't clear captcha as it do not exist! Try to fetch a captcha first");
+        return;
+    }
+
+    req.app.locals.captcha_img = undefined;
+    res.writeHead(200, {
+        'Content-Type': 'text/html',
+    });
+    res.end(null);
+});
+
+
+
+router.get('/recognize', async (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/html',
+    });
+    res.end(await recognizeCaptcha(path, path2));
+});
+
+module.exports = router;
+
+
+
+async function fetchCaptcha({browser, page}, locals, out = "image/captcha.png") {
+    if (locals.captcha_img_locked) {
+        error("Captcha Img Locked");
+        return;
+    }
+    locals.captcha_img_locked = true;
+    if (browser === undefined) {
+        error("Browser does not exist");
+
+        locals.captcha_img_locked  = false;
+        return;
+    }
+
+    console.log("Fetching captcha...");
+    try {
+
+        const display = await page.$("#imgCaptcha");
+        // console.log("Generating screenshot...");
+        // await page.screenshot({path: "image/screenshot2.png"});
+
+        locals.captcha_img_locked = false;
+        return await display.screenshot({path: out})
+
+    } catch (error) {
+        console.error(error)
+        locals.captcha_img_locked = false;
+    }
+
+}
+
+
+async function processingCaptcha(path, path2) {
+
+    // processing the img
+
+    let img = await Jimp.read(path);
     img = await cap.Binarization(img, 105);
     // let f = 2;
     // img.resize({w: img.width*f, h: img.height*f});
     // img.blur(1);
 
-
-    await img.write("image/captcha2.png");
-    let img_buffer = fs.readFileSync("image/captcha2.png");
-
-    let captcha =
-        cap.CropRecognize(img, 4,
-            (img, worker) => cap.RecognizeRotated(img, 5, 80, worker, true)
-        );
-
-
-    screenshotBuffer = img_buffer;
-
-
-    // Respond with the image
-    res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Content-Length': screenshotBuffer.length
-    });
-    res.end(screenshotBuffer);
-
-
-    console.log(colors("green", "================================"));
-    console.log();
-    console.log();
-    // await browser.close();
-})
-
-module.exports = router;
-
-async function fetchCaptcha({browser, page}, out) {
-    if (browser === undefined) {
-        console.error("Browser does not exist");
-        return;
-    }
-    console.log("Fetching captcha...");
-    try {
-        // const URL = 'https://rgsntl.rgs.cuhk.edu.hk/aqs_prd_applx/Public/tt_dsp_crse_catalog.aspx'
-        // const browser = await puppeteer.launch()
-        // const page = await browser.newPage()
-        // await page.goto(URL)
-
-
-        // const title = await page.evaluate(el => el.textContent, err_label);
-        // console.log("label: ", title);
-
-        // const url = "image/screenshot.png";
-        const display = await page.$("#imgCaptcha");
-        console.log("Generating screenshot...");
-        const screenshot = await display.screenshot({path: out});
-        await page.screenshot({path: "image/screenshot2.png"});
-
-        // const screenshot = await page.screenshot({ path: url });
-        // console.log(url)
-        // await crop(url, out);
-
-
-        return screenshot
-
-    } catch (error) {
-        console.error(error)
-    }
+    await img.write(path2 ?? path);
+    return img;
 }
 
 
+
+async function recognizeCaptcha(path, path2) {
+    let img = await processingCaptcha(path, path2);
+    return await
+        cap.CropRecognize(img, 4,
+            (img, worker) => cap.RecognizeRotated(img, 5, 80, worker, true)
+        );
+}
 
 
 async function crop(url, out) {

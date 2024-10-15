@@ -44,13 +44,13 @@ class CaptchaHelper {
             l.push(r.result);
             worker = r.worker;
         }
-        let str = ` ${l.toString().replaceAll(",", "")} `;
+        let str = `${l.toString().replaceAll(",", "")}`;
         let str_len = str.length;
         console.log(colors("yellow",
             `====================\n`
-                 + `=${str.padStart(9+str_len/2, " ").padEnd(18, " ")}=\n`
+                 + `===${str.padStart(7+str_len/2, " ").padEnd(14, " ")}===\n`
                  + `====================`));
-        return l;
+        return str;
     }
 
     async RecognizeCaptcha(buffer) {

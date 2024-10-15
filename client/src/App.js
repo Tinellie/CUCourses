@@ -2,7 +2,7 @@
 import './App.css';
 
 import * as React from 'react';
-import {FetchSubjectPanel} from "./components/FetchSubjectPanel";
+import {FetchSubjectPanel} from "./panel/FetchSubjectPanel";
 
 
 

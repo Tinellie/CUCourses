@@ -13,7 +13,7 @@ export function SubjectSelect({count, setSubject: parentSetSubject}){
                 try {
                     console.log("Fetching Subject List ... ");
                     let res = await axios.get("http://localhost:4000/subjects");
-                    console.log("Success!")
+                    console.log("Fetching Subject List - Success!")
                     setSubjects(res.data);
                 }
                 catch (e) {
