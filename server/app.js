@@ -30,7 +30,7 @@ const routersPath = [
     'index',
     'users',
     'test',
-    'screenshot',
+    'captcha',
     'search',
     'browser',
     'subjects'
