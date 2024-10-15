@@ -16,7 +16,6 @@ const path2 = "image/captcha.png";
 
 router.get('/', async (req, res) => {
 
-
     // browser not ready
     if (!req.app.locals.ready) {
         console.warn("Browser not initialized");
@@ -27,10 +26,9 @@ router.get('/', async (req, res) => {
         return;
     }
 
-
     console.log(colors("green", "\n\n======== FETCH  CAPTCHA ========"));
 
-    let buffer = req.app.locals.captcha_img ?? await fetchCaptcha(req.app.locals.pup_obj, req.app.locals, path);
+    let buffer = req.app.locals.captcha_img ?? await fetchCaptcha(req.app.locals.pup_obj, path);
 
     // console.log(colors("yellow", "Buffer: ") + buffer);
     // let buffer = fs.readFileSync("image/captcha.png");
@@ -50,7 +48,6 @@ router.get('/', async (req, res) => {
 
     console.log(colors("green", "================================\n\n"));
 
-
     if (!req.app.locals.captcha_img) {
         req.app.locals.captcha_img = buffer;
         req.app.locals.captcha_img_ready = true;
@@ -61,43 +58,35 @@ router.get('/', async (req, res) => {
 
 router.get('/clear', async (req, res) => {
     if (!req.app.locals.captcha_img_ready) {
-        res.writeHead(403, {
-            'Content-Type': 'text/html',
-        });
-        res.end("Can't clear captcha as it do not exist! Try to fetch a captcha first");
+        res.status(403).end("Can't clear captcha as it do not exist! Try to fetch a captcha first");
         return;
     }
+    clearCaptcha( req.app.locals);
+    res.status(200).end();
+});
 
-    req.app.locals.captcha_img = undefined;
-    res.writeHead(200, {
-        'Content-Type': 'text/html',
-    });
-    res.end(null);
+
+
+router.get('/refresh', async (req, res) => {
+    await refreshCaptcha(req.app.locals.pup_obj, req.app.locals);
+    res.status(200).end();
 });
 
 
 
 router.get('/recognize', async (req, res) => {
-    res.writeHead(200, {
-        'Content-Type': 'text/html',
-    });
-    res.end(await recognizeCaptcha(path, path2));
+    let r = await recognizeCaptcha(path, path2);
+    console.log(colors("cyan", r));
+    res.status(200).end(r);
 });
 
 module.exports = router;
 
 
 
-async function fetchCaptcha({browser, page}, locals, out = "image/captcha.png") {
-    if (locals.captcha_img_locked) {
-        error("Captcha Img Locked");
-        return;
-    }
-    locals.captcha_img_locked = true;
+async function fetchCaptcha({browser, page}, output_path = "image/captcha.png") {
     if (browser === undefined) {
         error("Browser does not exist");
-
-        locals.captcha_img_locked  = false;
         return;
     }
 
@@ -108,14 +97,15 @@ async function fetchCaptcha({browser, page}, locals, out = "image/captcha.png") 
         // console.log("Generating screenshot...");
         // await page.screenshot({path: "image/screenshot2.png"});
 
-        locals.captcha_img_locked = false;
-        return await display.screenshot({path: out})
+        return await display.screenshot({path: output_path})
 
     } catch (error) {
         console.error(error)
-        locals.captcha_img_locked = false;
     }
-
+}
+async function refreshCaptcha({page}, locals) {
+    await page.click("#btn_refresh");
+    clearCaptcha(locals)
 }
 
 
@@ -124,7 +114,7 @@ async function processingCaptcha(path, path2) {
     // processing the img
 
     let img = await Jimp.read(path);
-    img = await cap.Binarization(img, 105);
+    img = await cap.Binarization(img, 108);
     // let f = 2;
     // img.resize({w: img.width*f, h: img.height*f});
     // img.blur(1);
@@ -134,12 +124,16 @@ async function processingCaptcha(path, path2) {
 }
 
 
+function clearCaptcha(locals) {
+    locals.captcha_img = undefined;
+}
+
 
 async function recognizeCaptcha(path, path2) {
     let img = await processingCaptcha(path, path2);
     return await
         cap.CropRecognize(img, 4,
-            (img, worker) => cap.RecognizeRotated(img, 5, 80, worker, true)
+            (img, worker) => cap.RecognizeRotated(img, 10, 100, worker, true)
         );
 }
 
