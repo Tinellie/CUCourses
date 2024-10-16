@@ -1,12 +1,8 @@
-import {Box, Button, Grid2, TextField, Typography} from "@mui/material";
+import {Box, Grid2, Typography} from "@mui/material";
 import * as React from "react";
-import {useRef, useState} from "react";
-import qs from "qs";
-import axios from "axios";
+import {useState} from "react";
 
-import {SubjectSelect} from "../components/SubjectSelect";
 import {ApiTest} from "../components/ApiTest";
-import {CaptchaDisplay} from "../components/CaptchaDisplay";
 import {CaptchaForm} from "../components/CaptchaForm";
 
 
@@ -48,7 +44,6 @@ export function FetchSubjectPanel() {
     }
 
 
-    const [captcha, setCaptcha] = useState("");
 
     return (
         <Box>
@@ -63,9 +58,8 @@ export function FetchSubjectPanel() {
                 alignItems: "stretch",
                 gap: "10px"
             }}>
-                <CaptchaForm imgCount={[imgCount, imgUpdate]}
-                             subCount={[subCount, subUpdate]}
-                             captcha={[captcha, setCaptcha]}
+                <CaptchaForm imgCount={[imgUpdate, imgCount]}
+                             subCount={[subUpdate, subCount]}
                              addCourse={addCourse}/>
             </Grid2>
         </Box>

@@ -5,6 +5,7 @@ const colors = require('colors-console');
 const router = express.Router();
 
 const Course = require("../models/Course");
+const captcha = require("../modules/captcha");
 
 
 router.post('/subject', async (req, res) => {
@@ -16,22 +17,16 @@ router.post('/subject', async (req, res) => {
     console.log("PupObj: " + req.app.locals.pup_obj);
     console.log("Captcha: " + req.body.captcha);
     console.log("subject: " + req.body.subject);
-    const { data, screenshot } = await Search(req.app.locals.pup_obj, req.body.captcha, req.body.subject);
+
+    const search = await Search(req.app.locals.pup_obj, req.body.captcha, req.body.subject);
+    captcha.clear(req.app.locals);
+    if (typeof search === "string") {
+        res.status("400").end(search); return;
+    }
+
+    const { data, screenshot } = search;
     console.log("Search Finished");
-
-    // res.statusCode = 200;
-    // res.setHeader('Content-Type', 'text/html');
-    // res.end("Hello");
-    // const screenshotBuffer = screenshot
-    //
-    // // Respond with the image
-    // res.writeHead(200, {
-    //     'Content-Type': 'image/png',
-    //     'Content-Length': screenshotBuffer.length
-    // });
-    // res.end(screenshotBuffer);
     res.json(data);
-
 
     console.log(colors("green", "================================"));
     console.log();
@@ -56,7 +51,8 @@ async function Search({page, browser}, captcha, selection){
     const err_label = await page.$("#lbl_error");
     const err_msg = await page.evaluate(el => el.textContent, err_label);
     if (err_msg) {
-        console.log(colors("red", err_msg));
+        console.error(err_msg);
+        return err_msg;
     }
     else {
         console.log(colors("cyan", "Captcha Correct"));
@@ -78,7 +74,6 @@ async function Search({page, browser}, captcha, selection){
                 console.log(colors("blue", "reach the end of the table"));
                 break;
             }
-            console.log(colors("blue", `#${i}`));
 
             let cell = await row.$(`td:nth-child(2)`);
             let code = await row.$(`td:nth-child(1)`);
@@ -89,7 +84,7 @@ async function Search({page, browser}, captcha, selection){
                 await cell.$eval(`a`, e=>e.innerHTML)
             );
 
-            console.log(` ${course}`);
+            console.log(colors("blue", `#${i}`) + ` ${course}`);
 
             let link = await cell.$("a");
             await searchCourse(page, link, course)

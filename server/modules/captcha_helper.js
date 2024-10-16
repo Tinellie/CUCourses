@@ -69,7 +69,8 @@ class CaptchaHelper {
         // let currentCount = 0, current = '';
         let maxCount = 0, max = '';
         
-        let count = {};
+        // let count = {};
+        let count = [];
 
         for (let i = -range / 2; i <= range / 2; i += step) {
             let {data: {text}}
@@ -80,17 +81,29 @@ class CaptchaHelper {
             // console.log(`origin: ${text}`);
             text = text.replaceAll(/[^a-z0-9]/gi, "").toUpperCase();     // remove whitespace
             if (text.length > 1) text = [...new Set(text)].join("");
+            if (text.length > 1) text = "";
 
-            console.log(colors("grey", `trial: ${text} (max: ${max} * ${maxCount})`));
+            // console.log(colors("grey", `trial: ${text} (max: ${max} * ${maxCount})`));
 
+            // if (text.length > 0) {
+            //     for (const char of text) {
+            //         if (count[char] === undefined) count[char] = 0;
+            //         count[char]++;
+            //         if (count[char] > maxCount) {
+            //             max = char;
+            //             maxCount = count[char];
+            //         }
+            //     }
+            // }
             if (text.length > 0) {
-                for (const char of text) {
-                    if (count[char] === undefined) count[char] = 0;
-                    count[char]++;
-                    if (count[char] > maxCount) {
-                        max = char;
-                        maxCount = count[char];
-                    }
+                if (count.length === 0 || count[count.length - 1].text !== text) {
+                    count.push({text, count: 0})
+                }
+                let i = count.length-1;
+                count[i].count++;
+                if (count[i].count > maxCount) {
+                    max = count[i].text;
+                    maxCount = count[i].count;
                 }
             }
         }
