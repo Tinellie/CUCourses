@@ -37,11 +37,13 @@ export function CaptchaDisplay({imgCount: [imgCount, imgUpdate], onRecognize, se
 
     console.log("Reloading Captcha ..." + imgCount)
     return (
-        <Grid2 size={6} onClick={async ()=>{
-            console.warn("CAPTCHA: refreshing");
-            await fetch("http://localhost:4000/captcha/refresh");
-            imgUpdate(c=>c+1)   // Refetch Captcha on Click
-        }} sx={{width: "fit-content"}}>
+        <Grid2
+            id="captcha-display"
+            size={6} onClick={async ()=>{
+                console.warn("CAPTCHA: refreshing");
+                await fetch("http://localhost:4000/captcha/refresh");
+                imgUpdate(c=>c+1)   // Refetch Captcha on Click
+            }} sx={{width: "fit-content"}}>
             <StyledDiv id="img-wrapper">
                 <img
                     id="img" src={(imgCount > 0 ? "http://localhost:4000/captcha?c=" : "") + imgCount} alt=" "

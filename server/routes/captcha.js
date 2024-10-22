@@ -72,7 +72,6 @@ router.get('/refresh', async (req, res) => {
 // Recognize Current Captcha Image using OCR
 router.get('/recognize', async (req, res) => {
     let r = await captcha.recognize(path, path2);
-    console.log(colors("cyan", r));
     res.status(200).end(r);
 });
 

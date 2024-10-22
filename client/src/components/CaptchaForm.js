@@ -85,7 +85,8 @@ export function CaptchaForm({   imgCount: [imgUpdate, imgCount], subCount: [subU
                     </Grid2>
                 }
                 right={
-                    <Button variant="outlined"
+                    <Button id={"restart-browser-btn"}
+                            variant="outlined"
                             sx={{height: 1, textTransform: 'capitalize'}}
                             onClick={async ()=>{
                                 console.log("restart the browser...");

@@ -12,32 +12,13 @@ import {CaptchaForm} from "../components/CaptchaForm";
 
 
 
-export function FetchSubjectPanel() {
-
-
+export function FetchSubjectPanel({addCourse}) {
 
 
     // Count Used for Updating Captcha Img
     const [imgCount, imgUpdate] = useState(0);
     const [subCount, subUpdate] = useState(0);
 
-    const [courses, setCourses] = useState([]);
-
-    function addCourse(newCourses) {
-        let list = [ ...courses ];
-
-        for (let i = 0; i < newCourses.length; i++) {
-
-            // Check Duplicated Course Items with Same Course Code
-
-            let idx = list.findIndex(v => v.code === newCourses[i].code);
-
-            if (idx >= 0) list[idx] = newCourses[i];
-            else list.push(newCourses[i]);
-        }
-        setCourses(list);
-        return list;
-    }
 
     function Text(t, color="primary.main") {
         return <Typography sx={{color:color}}>{t}</Typography>
