@@ -16,18 +16,35 @@ function CentralizedGrid({children, left, right, sx, sxL, sxR}) {
         </Grid2>
     );
 }
+// function onCaptchaInputChange(e, setCaptcha){
+//     // Update Captcha Input State only if Input.length == 4
+//     // if (e.target.value.length === 4 || e.target.value.length === 0) setCaptcha(e.target.value)
+//
+// }
+
+function CaptchaInput({captcha: [captcha, setCaptcha]}){
+
+    return (
+        <TextField id="captcha-input" label="captcha" type="text" name="captcha"
+                   onChange={e => {
+                       setCaptcha(e.target.value);
+                   }} value={captcha}/>
+    )
+}
 
 
-export function CaptchaForm({   imgCount: [imgCount, imgUpdate], subCount: [subCount, subUpdate],
-                                captcha: [captcha, setCaptcha], addCourse}) {
+export function CaptchaForm({   imgCount: [imgUpdate, imgCount], subCount: [subUpdate, subCount],
+                                addCourse}) {
 
     const subject = useRef("");
-    const [captchaRecognized, setCaptchaRecognized] = useState("");
+
+    const [captchaRecognized, setCaptchaRecognized] = useState("-");
+    const [captcha, setCaptcha] = useState("");
 
     return (
         <Grid2 container columnGap={1}
-               component="form" //action="http://localhost:4000/search/subject" method="POST"
-               onSubmit={e=>OnSubmit(e, subject.current, captcha, imgUpdate, imgCount, addCourse)}
+               component="form"
+               onSubmit={e=>OnSubmit(e, subject.current, captcha, imgUpdate, addCourse)}
                sx={{
                    width: "600px"
                }}>
@@ -38,16 +55,13 @@ export function CaptchaForm({   imgCount: [imgCount, imgUpdate], subCount: [subC
 
             <CentralizedGrid
                 children={
-
-                    <Grid2 size={6} onClick={async ()=>{
-                        console.log("CAPTCHA: refetching");
-                        await fetch("http://localhost:4000/captcha/clear");
-                        imgUpdate(imgCount+1)   // Refetch Captcha on Click
-                    }} sx={{width: "fit-content"}}>
-                        <CaptchaDisplay count={imgCount} onLoad={
-                            str => setCaptchaRecognized(str)
-                        } />
-                    </Grid2>
+                    <CaptchaDisplay imgCount={[imgCount, imgUpdate]}
+                                    setCaptchaRecognized={setCaptchaRecognized}
+                                    onRecognize={str => {
+                                        setCaptchaRecognized(str);
+                                        setCaptcha(str);
+                                    }}
+                    />
                 }
                 right={
                     <>
@@ -67,22 +81,19 @@ export function CaptchaForm({   imgCount: [imgCount, imgUpdate], subCount: [subC
             <CentralizedGrid
                 children={
                     <Grid2 container width={200} columnGap={1}>
-                        <TextField id="captcha-input" label="captcha" type="text" name="captcha"
-                                   onChange={e=> {
-                                       // Update Captcha Input State only if Input.length == 4
-                                       if (e.target.value.length === 4) setCaptcha(e.target.value)
-                                   }}/>
+                        <CaptchaInput captcha={[captcha, setCaptcha]}/>
                     </Grid2>
                 }
                 right={
-                    <Button variant="outlined"
+                    <Button id={"restart-browser-btn"}
+                            variant="outlined"
                             sx={{height: 1, textTransform: 'capitalize'}}
                             onClick={async ()=>{
                                 console.log("restart the browser...");
                                 await fetch("http://localhost:4000/browser/restart");
                                 console.log("refetching...");
-                                imgUpdate(imgCount+1);   // Update
-                                subUpdate(subCount+1);
+                                imgUpdate(c => c+1);   // Update
+                                subUpdate(c => c+1);
                             }}>Refresh</Button>
                 }
                 sx={{position: "relative"}}
@@ -103,28 +114,37 @@ export function CaptchaForm({   imgCount: [imgCount, imgUpdate], subCount: [subC
 
 
 
-async function OnSubmit(e, subject, captcha, setCount, count, addCourse) {
+async function OnSubmit(e, subject, captcha, imgUpdate, addCourse) {
     e.preventDefault();
 
     console.log(`POST captcha "${captcha}" to server`);
     console.log(`Searching for course of subject "${subject}"`);
 
-    let data = { "subject": subject, "captcha": captcha };
     const options = {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        data: qs.stringify(data),
+        data: qs.stringify({
+            "subject": subject,
+            "captcha": captcha
+        }),
         url: 'http://localhost:4000/search/subject'
     };
-    let res = await axios(options);
+    try {
+        let res = await axios(options);
 
-    // Output Res
-    console.log(res);
-    for (const key in res.data) {
-        let item = res.data[key];
-        console.log(`[${item.code}] ${item.name} (${item.unit})`);
+        // Output Res
+        console.log(res);
+        for (const key in res.data) {
+            let item = res.data[key];
+            console.log(`[${item.code}] ${item.name} (${item.unit})`);
+        }
+        console.log(addCourse(res.data));
+
+    } catch (e) {
+        console.error(e);
+        console.error(e.response.data);
+    } finally {
+        imgUpdate(c => c+1); // Update Captcha Image
     }
-    setCount(count+1); // Update Captcha Image
-    console.log(addCourse(res.data));
 
 }

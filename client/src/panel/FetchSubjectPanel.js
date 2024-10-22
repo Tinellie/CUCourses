@@ -1,12 +1,8 @@
-import {Box, Button, Grid2, TextField, Typography} from "@mui/material";
+import {Box, Grid2, Typography} from "@mui/material";
 import * as React from "react";
-import {useRef, useState} from "react";
-import qs from "qs";
-import axios from "axios";
+import {useState} from "react";
 
-import {SubjectSelect} from "../components/SubjectSelect";
 import {ApiTest} from "../components/ApiTest";
-import {CaptchaDisplay} from "../components/CaptchaDisplay";
 import {CaptchaForm} from "../components/CaptchaForm";
 
 
@@ -16,39 +12,19 @@ import {CaptchaForm} from "../components/CaptchaForm";
 
 
 
-export function FetchSubjectPanel() {
-
-
+export function FetchSubjectPanel({addCourse}) {
 
 
     // Count Used for Updating Captcha Img
     const [imgCount, imgUpdate] = useState(0);
     const [subCount, subUpdate] = useState(0);
 
-    const [courses, setCourses] = useState([]);
-
-    function addCourse(newCourses) {
-        let list = [ ...courses ];
-
-        for (let i = 0; i < newCourses.length; i++) {
-
-            // Check Duplicated Course Items with Same Course Code
-
-            let idx = list.findIndex(v => v.code === newCourses[i].code);
-
-            if (idx >= 0) list[idx] = newCourses[i];
-            else list.push(newCourses[i]);
-        }
-        setCourses(list);
-        return list;
-    }
 
     function Text(t, color="primary.main") {
         return <Typography sx={{color:color}}>{t}</Typography>
     }
 
 
-    const [captcha, setCaptcha] = useState("");
 
     return (
         <Box>
@@ -63,9 +39,8 @@ export function FetchSubjectPanel() {
                 alignItems: "stretch",
                 gap: "10px"
             }}>
-                <CaptchaForm imgCount={[imgCount, imgUpdate]}
-                             subCount={[subCount, subUpdate]}
-                             captcha={[captcha, setCaptcha]}
+                <CaptchaForm imgCount={[imgUpdate, imgCount]}
+                             subCount={[subUpdate, subCount]}
                              addCourse={addCourse}/>
             </Grid2>
         </Box>
